@@ -1,0 +1,301 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Share King | Secure Real-Time File Sharing</title>
+    <meta name="description" content="Securely share files and notes in real-time between devices. No login required. 6-digit room code protection.">
+    <!-- Google Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <!-- Lucide Icons -->
+    <script src="https://unpkg.com/lucide@latest"></script>
+    <!-- Supabase JS -->
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <link rel="stylesheet" href="style.css">
+</head>
+<body class="dark-mode"> <!-- Default to dark mode for premium look -->
+    <div id="app" class="app-container">
+        
+        <!-- Background Elements for Aesthetics -->
+        <div class="bg-gradient"></div>
+        <div class="bg-blur"></div>
+
+        <!-- Home Screen -->
+        <section id="home-screen" class="screen active">
+            <header class="hero">
+                <div class="top-actions">
+                    <button id="btn-theme-toggle-home" class="btn-icon theme-toggle" title="Toggle Theme">
+                        <i data-lucide="moon" class="dark-icon"></i>
+                        <i data-lucide="sun" class="light-icon"></i>
+                    </button>
+                </div>
+                <div class="logo">
+                    <i data-lucide="share-2" class="logo-icon"></i>
+                    <span>Share King</span>
+                </div>
+                <h1>Share anything, <br><span class="highlight">instantly.</span></h1>
+                <p>Private, secure, and real-time file sharing between all your devices.</p>
+            </header>
+
+            <div class="home-actions">
+                <button id="btn-create-room" class="btn btn-primary">
+                    <i data-lucide="plus-circle"></i>
+                    <span>Create Room</span>
+                </button>
+                <div class="separator">OR</div>
+                <button id="btn-join-room-trigger" class="btn btn-secondary">
+                    <i data-lucide="key-round"></i>
+                    <span>Join Room</span>
+                </button>
+            </div>
+
+            <footer class="home-footer">
+                <div class="feature-item">
+                    <i data-lucide="shield-check"></i>
+                    <span>Secure Rooms</span>
+                </div>
+                <div class="feature-item">
+                    <i data-lucide="zap"></i>
+                    <span>Real-time Sync</span>
+                </div>
+                <div class="feature-item">
+                    <i data-lucide="timer"></i>
+                    <span>Auto-expiry</span>
+                </div>
+            </footer>
+        </section>
+
+        <!-- Create Room Modal/Screen -->
+        <section id="create-room-screen" class="screen">
+            <div class="modal-card">
+                <div class="modal-header">
+                    <button class="btn-icon btn-back"><i data-lucide="arrow-left"></i></button>
+                    <h2>Setup Your Room</h2>
+                </div>
+                <div class="modal-body">
+                    <div class="form-group">
+                        <label>Your Room Code</label>
+                        <div class="code-display">
+                            <span id="generated-room-code">000 000</span>
+                            <button id="refresh-code" class="btn-icon mini"><i data-lucide="refresh-cw"></i></button>
+                        </div>
+                    </div>
+                    
+                    <div class="form-group">
+                        <label for="room-password">Protect with Password (Optional)</label>
+                        <div class="input-with-icon">
+                            <i data-lucide="lock"></i>
+                            <input type="password" id="room-password" placeholder="Enter password (optional)">
+                        </div>
+                    </div>
+
+                    <div class="form-group">
+                        <label>Room Expiry</label>
+                        <div class="expiry-options">
+                            <label class="expiry-btn active">
+                                <input type="radio" name="expiry" value="10m" checked>
+                                <span>10 Min</span>
+                            </label>
+                            <label class="expiry-btn">
+                                <input type="radio" name="expiry" value="1h">
+                                <span>1 Hour</span>
+                            </label>
+                            <label class="expiry-btn">
+                                <input type="radio" name="expiry" value="24h">
+                                <span>24 Hours</span>
+                            </label>
+                        </div>
+                    </div>
+
+                    <button id="btn-start-room" class="btn btn-primary btn-block">
+                        <span>Launch Room</span>
+                        <i data-lucide="rocket"></i>
+                    </button>
+                </div>
+            </div>
+        </section>
+
+        <!-- Join Room Modal/Screen -->
+        <section id="join-room-screen" class="screen">
+            <div class="modal-card">
+                <div class="modal-header">
+                    <button class="btn-icon btn-back"><i data-lucide="arrow-left"></i></button>
+                    <h2>Join a Room</h2>
+                </div>
+                <div class="modal-body">
+                    <div class="form-group">
+                        <label for="join-room-code">Enter 6-digit Code</label>
+                        <div class="code-input-wrapper">
+                            <input type="text" id="join-room-code" maxlength="6" placeholder="000000" class="code-input">
+                        </div>
+                    </div>
+
+                    <div id="join-password-container" class="form-group hidden">
+                        <label for="join-room-password">Enter Room Password</label>
+                        <div class="input-with-icon">
+                            <i data-lucide="lock"></i>
+                            <input type="password" id="join-room-password" placeholder="Room password">
+                        </div>
+                    </div>
+
+                    <p id="join-error" class="error-text hidden"></p>
+
+                    <button id="btn-join-room" class="btn btn-primary btn-block">
+                        <span>Enter Room</span>
+                        <i data-lucide="log-in"></i>
+                    </button>
+                </div>
+            </div>
+        </section>
+
+        <!-- Dashboard / Main Interface -->
+        <section id="dashboard-screen" class="screen">
+            <nav class="top-nav">
+                <div class="room-info">
+                    <div class="room-indicator">
+                        <span class="pulse"></span>
+                        <span id="display-room-code">000 000</span>
+                    </div>
+                    <div class="user-count">
+                        <i data-lucide="users"></i>
+                        <span id="active-users">1</span>
+                    </div>
+                </div>
+                <div class="nav-actions">
+                    <button id="btn-play-game" class="btn-icon game-btn" title="Play Tic-Tac-Toe"><i data-lucide="gamepad-2"></i></button>
+                    <button id="btn-theme-toggle-dash" class="btn-icon theme-toggle" title="Toggle Theme">
+                        <i data-lucide="moon" class="dark-icon"></i>
+                        <i data-lucide="sun" class="light-icon"></i>
+                    </button>
+                    <button id="btn-share-room" class="btn-icon" title="Share Room"><i data-lucide="share-2"></i></button>
+                    <button id="btn-leave-room" class="btn-icon" title="Leave Room"><i data-lucide="log-out"></i></button>
+                </div>
+            </nav>
+
+            <main id="dashboard-content" class="dashboard-content">
+                <div id="file-grid" class="file-grid">
+                    <!-- Files will be injected here -->
+                    <div class="empty-state">
+                        <i data-lucide="cloud-off"></i>
+                        <p>No files shared yet. Be the first!</p>
+                    </div>
+                </div>
+
+                <!-- Drop Zone Overlay -->
+                <div id="drop-zone-overlay" class="drop-zone-overlay hidden">
+                    <div class="drop-zone-content">
+                        <i data-lucide="upload-cloud"></i>
+                        <p>Drop your files to Share King</p>
+                    </div>
+                </div>
+            </main>
+
+            <!-- Bottom Action Bar -->
+            <div class="bottom-bar">
+                <div class="upload-controls">
+                    <button id="btn-add-note" class="control-btn" title="Add Note">
+                        <i data-lucide="sticky-note"></i>
+                    </button>
+                    <div class="upload-btn-wrapper">
+                        <input type="file" id="file-input" multiple>
+                        <button id="btn-upload-trigger" class="btn btn-primary main-upload">
+                            <i data-lucide="upload"></i>
+                            <span>Upload Files</span>
+                        </button>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Upload Progress Overlay (Hidden) -->
+            <div id="upload-progress-overlay" class="upload-progress-overlay hidden">
+                <div class="progress-card">
+                    <div class="progress-header">
+                        <span id="progress-filename">Uploading...</span>
+                        <span id="progress-percent">0%</span>
+                    </div>
+                    <div class="progress-bar-bg">
+                        <div id="progress-bar-fill" class="progress-bar-fill"></div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Note Creation Modal (Hidden) -->
+            <div id="note-modal" class="modal-overlay hidden">
+                <div class="modal-card">
+                    <div class="modal-header">
+                        <h2>Share a Note</h2>
+                        <button class="btn-icon close-note"><i data-lucide="x"></i></button>
+                    </div>
+                    <div class="modal-body">
+                        <textarea id="note-text" placeholder="Type or paste your note here..." rows="8"></textarea>
+                        <button id="btn-save-note" class="btn btn-primary btn-block">Share Note</button>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- File Preview Modal (Hidden) -->
+            <div id="preview-modal" class="modal-overlay hidden">
+                <div class="modal-card preview-card">
+                    <div class="modal-header">
+                        <h3 id="preview-title">File Name</h3>
+                        <button class="btn-icon close-preview"><i data-lucide="x"></i></button>
+                    </div>
+                    <div id="preview-content" class="preview-body">
+                        <!-- Media player/image/text will be injected here -->
+                    </div>
+                    <div class="preview-footer">
+                        <button id="btn-download-file" class="btn btn-secondary">
+                            <i data-lucide="download"></i> Download
+                        </button>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Tic-Tac-Toe Modal (Hidden) -->
+            <div id="game-modal" class="modal-overlay hidden">
+                <div class="modal-card game-card">
+                    <div class="modal-header">
+                        <div class="game-title">
+                            <i data-lucide="swords"></i>
+                            <h2>Tic-Tac-Toe</h2>
+                        </div>
+                        <button id="btn-close-game" class="btn-icon"><i data-lucide="x"></i></button>
+                    </div>
+                    <div class="game-status" id="game-status">Waiting for opponent...</div>
+                    <div class="game-board-container">
+                        <div class="game-grid" id="ttt-grid">
+                            <div class="ttt-cell" data-index="0"></div>
+                            <div class="ttt-cell" data-index="1"></div>
+                            <div class="ttt-cell" data-index="2"></div>
+                            <div class="ttt-cell" data-index="3"></div>
+                            <div class="ttt-cell" data-index="4"></div>
+                            <div class="ttt-cell" data-index="5"></div>
+                            <div class="ttt-cell" data-index="6"></div>
+                            <div class="ttt-cell" data-index="7"></div>
+                            <div class="ttt-cell" data-index="8"></div>
+                        </div>
+                        <div id="winning-line" class="winning-line"></div>
+                    </div>
+                    <div class="game-footer">
+                        <div class="player-info">
+                            <span id="player-x" class="badge">X: --</span>
+                            <span id="player-o" class="badge">O: --</span>
+                        </div>
+                        <button id="btn-reset-game" class="btn btn-secondary mini hidden">Reset Game</button>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- Notification Toast -->
+        <div id="toast" class="toast hidden">
+            <span id="toast-message">Message here</span>
+        </div>
+
+    </div>
+
+    <script src="script.js"></script>
+</body>
+</html>
